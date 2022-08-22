@@ -50,7 +50,15 @@ You can specify custom togglables with the `setup()` function:
 ```lua
 -- init.lua
 require('nvim-toggler').setup({
-  ['vim'] = 'emacs'
+  global_inversions = {
+   ['vim'] = 'emacs'
+   ['=='] = '!='
+  },
+  filetype_inversions = {  -- overwrite inversions in specific filetypes
+    lua = {
+      ['=='] = '~='
+    }
+  }
 })
 ```
 
