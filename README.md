@@ -30,13 +30,13 @@ Plug 'nguyenvukhang/nvim-toggler'
 
 ```lua
 -- init.lua
-require('nvim-toggler')
+require('nvim-toggler').setup()
 ```
 
 ```vim
 " init.vim or .vimrc
 lua << EOF
-require('nvim-toggler')
+require('nvim-toggler').setup()
 EOF
 ```
 
@@ -45,26 +45,28 @@ word under your cursor.
 
 ## Custom inverses
 
-You can specify custom togglables with the `setup()` function:
+You can configure `nvim-toggler` with the `setup()` function:
 
 ```lua
 -- init.lua
 require('nvim-toggler').setup({
-  ['vim'] = 'emacs'
+  -- your own inverses
+  inverses = {
+    ['vim'] = 'emacs'
+  },
+  -- removes the default <leader>i keymap
+  remove_default_keybinds = true,
 })
 ```
 
-The defaults are defined in [the one and only lua file][source]
-
 ## Custom keymaps
 
-To remap toggling to something else like `<leader>cl`, simply do
+To map toggling to something else like `<leader>cl`, simply do
 
 ```lua
 -- init.lua
 vim.keymap.set({ 'n', 'v' }, '<leader>cl', require('nvim-toggler').toggle)
 ```
 
-[source]: https://github.com/nguyenvukhang/nvim-toggler/blob/main/lua/nvim-toggler.lua
 [packer]: https://github.com/wbthomason/packer.nvim
 [vim-plug]: https://github.com/junegunn/vim-plug
