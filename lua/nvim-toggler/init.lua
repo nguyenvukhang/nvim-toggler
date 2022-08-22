@@ -18,7 +18,7 @@ local toggle = function()
   local x = vim.fn.col('.')
   local ch = vim.fn.getline('.'):sub(x, x)
   if not Keys.is_keyword(ch) then
-    print("not keyword")
+    print('not keyword')
     return
   end
   -- toggle the word
@@ -26,7 +26,7 @@ local toggle = function()
 end
 
 local setup = function(opts)
-  opts = vim.tbl_extend('force', default_opts, opts or {})
+  opts = vim.tbl_deep_extend('force', default_opts, opts or {})
   Inverse.update(opts.inverses or {})
   if not opts.remove_default_keybinds then
     vim.keymap.set(
