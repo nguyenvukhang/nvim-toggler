@@ -1,12 +1,15 @@
 local Keys = require('nvim-toggler.keys')
+local u = require('nvim-toggler.utils')
 local Inverse = { list = {} }
 
 Inverse.update = function(list)
-  Inverse.list = vim.tbl_extend(
-    'force',
-    Inverse.list,
-    vim.tbl_add_reverse_lookup(list or {})
-  )
+  local rl = function()
+    list = vim.tbl_add_reverse_lookup(list or {})
+  end
+  if not u.assert(pcall(rl), u.err.DUPLICATE_INVERSE) then
+    list = {}
+  end
+  Inverse.list = vim.tbl_extend('force', Inverse.list, list)
   Keys.update(Inverse.list)
 end
 
@@ -19,17 +22,20 @@ Inverse.toggle = function()
   -- check character under cursor
   local x = vim.fn.col('.')
   local ch = vim.fn.getline('.'):sub(x, x)
-  if not Keys.is_keyword(ch) then
-    print('toggler: unsupported value.')
+  if not u.assert(Keys.is_keyword(ch), u.err.UNSUPPORTED_VALUE) then
     return
   end
+  -- get current mode
+  local m = c[vim.api.nvim_get_mode().mode]
+  if not u.assert(m, u.err.UNSUPPORTED_MODE) then
+    return
+  end
+  -- get word under cursor
   Keys.load()
-  local i = vim.tbl_get(Inverse.list, vim.fn.expand('<cword>'))
-  xpcall(function()
-    vim.cmd(vim.tbl_get(c, vim.api.nvim_get_mode().mode) .. i)
-  end, function()
-    print('toggler: unsupported value.')
-  end)
+  local i = Inverse.list[vim.fn.expand('<cword>')]
+  if u.assert(i, u.err.UNSUPPORTED_VALUE) then
+    vim.cmd(m .. i)
+  end
   Keys.reset()
 end
 
