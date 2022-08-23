@@ -1,5 +1,4 @@
 local Inverse = require('nvim-toggler.inverse')
-local Keys = require('nvim-toggler.keys')
 
 local default_opts = {
   inverses = {
@@ -13,18 +12,6 @@ local default_opts = {
   remove_default_keybinds = false,
 }
 
-local toggle = function()
-  -- check character under cursor
-  local x = vim.fn.col('.')
-  local ch = vim.fn.getline('.'):sub(x, x)
-  if not Keys.is_keyword(ch) then
-    print('not keyword')
-    return
-  end
-  -- toggle the word
-  Inverse.toggle()
-end
-
 local setup = function(opts)
   opts = vim.tbl_deep_extend('force', default_opts, opts or {})
   Inverse.update(opts.inverses or {})
@@ -32,10 +19,10 @@ local setup = function(opts)
     vim.keymap.set(
       { 'n', 'v' },
       '<leader>i',
-      toggle,
+      Inverse.toggle,
       { noremap = true, silent = true }
     )
   end
 end
 
-return { setup = setup, toggle = toggle }
+return { setup = setup, toggle = Inverse.toggle }

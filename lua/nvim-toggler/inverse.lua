@@ -7,16 +7,7 @@ Inverse.update = function(list)
     Inverse.list,
     vim.tbl_add_reverse_lookup(list or {})
   )
-  local u = {}
-  for k in pairs(Inverse.list) do
-    k:gsub('.', function(c)
-      u[c] = true
-    end)
-  end
-  for c in pairs(u) do
-    Keys.add_char(c)
-  end
-  Keys.update_keys()
+  Keys.update(Inverse.list)
 end
 
 local c = {
@@ -25,6 +16,13 @@ local c = {
 }
 
 Inverse.toggle = function()
+  -- check character under cursor
+  local x = vim.fn.col('.')
+  local ch = vim.fn.getline('.'):sub(x, x)
+  if not Keys.is_keyword(ch) then
+    print('toggler: unsupported value.')
+    return
+  end
   Keys.load()
   local i = vim.tbl_get(Inverse.list, vim.fn.expand('<cword>'))
   xpcall(function()
