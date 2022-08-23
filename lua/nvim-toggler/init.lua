@@ -10,12 +10,20 @@ local default_opts = {
     ['!='] = '==',
   },
   remove_default_keybinds = false,
+  remove_default_inverses = false,
 }
 
 local setup = function(opts)
-  opts = vim.tbl_deep_extend('force', default_opts, opts or {})
-  Inverse.update(opts.inverses or {})
-  if not opts.remove_default_keybinds then
+  -- read flat (non-nested) options
+  local flat_opts = vim.tbl_extend('force', default_opts, opts or {})
+  -- handle inverses
+  local inverses = opts.inverses or {}
+  if not flat_opts.remove_default_inverses then
+    inverses = vim.tbl_extend('force', default_opts.inverses, inverses)
+  end
+  Inverse.update(inverses)
+  -- set keybinds
+  if not flat_opts.remove_default_keybinds then
     vim.keymap.set(
       { 'n', 'v' },
       '<leader>i',
