@@ -14,8 +14,9 @@ local default_opts = {
 }
 
 local setup = function(opts)
+  opts = opts or {}
   -- read flat (non-nested) options
-  local flat_opts = vim.tbl_extend('force', default_opts, opts or {})
+  local flat_opts = vim.tbl_extend('force', default_opts, opts)
   -- handle inverses
   local inverses = opts.inverses or {}
   if not flat_opts.remove_default_inverses then
