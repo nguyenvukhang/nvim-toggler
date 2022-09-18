@@ -15,4 +15,19 @@ utils.err = {
   DUPLICATE_INVERSE = 'toggler: inverse config has duplicates.',
 }
 
+-- remove duplicates key/value == value/key if exists
+utils.remove_duplicates = function(list)
+  local cleaned_list = {}
+
+  for key, value in pairs(list) do
+    if not list[value] then
+      cleaned_list[key] = value
+    elseif not cleaned_list[value] and not cleaned_list[key] then
+      cleaned_list[key] = value
+    end
+  end
+
+  return cleaned_list
+end
+
 return utils
