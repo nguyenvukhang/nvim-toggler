@@ -3,7 +3,7 @@ local utils = {}
 -- returns a boolean of the success of the assertion
 utils.assert = function(v, message)
   if not v then
-    print(message)
+    vim.notify(message, vim.log.levels.WARN)
     return false
   end
   return true
