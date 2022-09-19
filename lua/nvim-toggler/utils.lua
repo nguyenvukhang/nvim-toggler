@@ -67,7 +67,7 @@ utils.merge = function(def_tbl, user_tbl)
 end
 
 local test_sanitize_tbl = function(recevied, expected)
-  local received = utils.sanitize_tbl(recevied)
+  local received = sanitize_tbl({}, recevied)
   local log = vim.inspect({ received = received, expected = expected })
   for k, v in pairs(expected) do
     local rk, ek, rv, ev = received[k], expected[k], received[v], expected[v]
