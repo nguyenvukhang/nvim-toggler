@@ -3,12 +3,9 @@ local u = require('nvim-toggler.utils')
 local Inverse = { list = {} }
 
 Inverse.update = function(list)
-  local rl = function()
-    list = vim.tbl_add_reverse_lookup(list or {})
-  end
-  if not u.assert(pcall(rl), u.err.DUPLICATE_INVERSE) then
-    list = {}
-  end
+  list = u.sanitize_list(list)
+  list = vim.tbl_add_reverse_lookup(list or {})
+
   Inverse.list = vim.tbl_extend('force', Inverse.list, list)
   Keys.update(Inverse.list)
 end
