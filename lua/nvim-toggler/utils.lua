@@ -15,15 +15,30 @@ utils.err = {
   DUPLICATE_INVERSE = 'toggler: inverse config has duplicates.',
 }
 
--- remove duplicates key/value == value/key if exists
-utils.remove_duplicates = function(list)
+-- key/value is valid if not empty and not include control
+-- and whitespace characters
+local function is_valid_key_value(key, value)
+  if value == '' or key == '' then
+    return false
+  elseif value:match('[%s%c]') or key:match('[%s%c]') then
+    return false
+  end
+  return true
+end
+
+-- remove duplicates and invalid pairs key/value
+utils.sanitize_list = function(list)
   local cleaned_list = {}
+  local uniq_values = {}
 
   for key, value in pairs(list) do
-    if not list[value] then
-      cleaned_list[key] = value
-    elseif not cleaned_list[value] and not cleaned_list[key] then
-      cleaned_list[key] = value
+    if not uniq_values[value] and is_valid_key_value(key, value) then
+      if not list[value] then
+        cleaned_list[key] = value
+      elseif not cleaned_list[value] and not cleaned_list[key] then
+        cleaned_list[key] = value
+      end
+      uniq_values[value] = true
     end
   end
 
