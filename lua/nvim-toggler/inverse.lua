@@ -9,8 +9,8 @@ Inverse.update = function(list)
 end
 
 local c = {
-  ['n'] = 'norm! ciw',
-  ['v'] = 'norm! c',
+  ['n'] = 'norm! "_ciw',
+  ['v'] = 'norm! "_c',
 }
 
 Inverse.toggle = function()
