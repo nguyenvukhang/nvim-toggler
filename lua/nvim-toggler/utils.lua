@@ -15,34 +15,77 @@ utils.err = {
   DUPLICATE_INVERSE = 'toggler: inverse config has duplicates.',
 }
 
--- key/value is valid if not empty and not include control
--- and whitespace characters
-local function is_valid_key_value(key, value)
-  if value == '' or key == '' then
-    return false
-  elseif value:match('[%s%c]') or key:match('[%s%c]') then
-    return false
+-- key/value is valid if not empty, and does not include control
+-- nor whitespace characters
+local function is_valid(k, v)
+  local function valid(x)
+    return x ~= '' and not x:match('[%s%c]')
   end
-  return true
+  return valid(k) and valid(v)
 end
 
--- remove duplicates and invalid pairs key/value
-utils.sanitize_list = function(list)
-  local cleaned_list = {}
-  local uniq_values = {}
+-- validate each key-value pair
+local validate_tbl = function(tbl)
+  local valid = {}
+  for k, v in pairs(tbl) do
+    if is_valid(k, v) then
+      valid[k] = v
+    end
+  end
+  return valid
+end
 
-  for key, value in pairs(list) do
-    if not uniq_values[value] and is_valid_key_value(key, value) then
-      if not list[value] then
-        cleaned_list[key] = value
-      elseif not cleaned_list[value] and not cleaned_list[key] then
-        cleaned_list[key] = value
-      end
-      uniq_values[value] = true
+-- remove duplicates
+local sanitize_tbl = function(base, tbl)
+  local result = base or {} -- fallback to blank table
+  tbl = validate_tbl(tbl) -- validate incoming tbl
+  local hash = {}
+
+  for k, v in pairs(tbl) do
+    if not hash[k] and not hash[v] then
+      result[k] = v
+      hash[k] = true
+      hash[v] = true
     end
   end
 
-  return cleaned_list
+  return result
 end
+
+-- prioritizes user over defaults
+-- returns a tbl ready to have a reverse lookup generated
+--
+-- def_tbl  - default table
+-- user_tbl - user's table
+utils.merge = function(def_tbl, user_tbl)
+  user_tbl = sanitize_tbl({}, user_tbl)
+  if vim.tbl_isempty(def_tbl) then
+    return user_tbl
+  else
+    return sanitize_tbl(user_tbl, def_tbl)
+  end
+end
+
+local test_sanitize_tbl = function(recevied, expected)
+  local received = utils.sanitize_tbl(recevied)
+  local log = vim.inspect({ received = received, expected = expected })
+  for k, v in pairs(expected) do
+    local rk, ek, rv, ev = received[k], expected[k], received[v], expected[v]
+    if rk ~= ek then
+      vim.notify(log, vim.log.levels.WARN)
+      return
+    end
+    if rv ~= ev then
+      vim.notify(log, vim.log.levels.WARN)
+      return
+    end
+  end
+end
+
+vim.api.nvim_create_user_command('NvimTogglerTest', function()
+  test_sanitize_tbl({ ['a'] = 'c', ['b'] = 'c' }, { ['a'] = 'c' })
+  test_sanitize_tbl({ ['a'] = 'b', ['b'] = 'c' }, { ['a'] = 'b' })
+  print('end of test.')
+end, {})
 
 return utils
