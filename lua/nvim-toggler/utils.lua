@@ -72,26 +72,4 @@ utils.merge = function(def_tbl, user_tbl)
   end
 end
 
-local test_sanitize_tbl = function(recevied, expected)
-  local received = sanitize_tbl({}, recevied)
-  local log = vim.inspect({ received = received, expected = expected })
-  for k, v in pairs(expected) do
-    local rk, ek, rv, ev = received[k], expected[k], received[v], expected[v]
-    if rk ~= ek then
-      vim.notify(log, vim.log.levels.WARN)
-      return
-    end
-    if rv ~= ev then
-      vim.notify(log, vim.log.levels.WARN)
-      return
-    end
-  end
-end
-
-vim.api.nvim_create_user_command('NvimTogglerTest', function()
-  test_sanitize_tbl({ ['a'] = 'c', ['b'] = 'c' }, { ['a'] = 'c' })
-  test_sanitize_tbl({ ['a'] = 'b', ['b'] = 'c' }, { ['a'] = 'b' })
-  print('end of test.')
-end, {})
-
 return utils
