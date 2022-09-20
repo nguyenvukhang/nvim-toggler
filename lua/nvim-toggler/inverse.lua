@@ -13,13 +13,34 @@ local c = {
   ['v'] = 'norm! "_c',
 }
 
+local contains = function(str, query)
+  if string.find(str, query) then
+    return true
+  else
+    return false
+  end
+end
+
 -- m - mode
+-- w - captured word under cursor
 -- i - inverse
-local toggle = function(m, i)
+-- ch - character under cursor
+--
+-- doesn't toggle if `w` doesn't contain `ch`
+local toggle = function(m, w, i, ch)
+  if not u.assert(contains(w, ch), u.err.UNSUPPORTED_VALUE) then
+    return
+  end
   if u.assert(i, u.err.UNSUPPORTED_VALUE) then
     -- execute the toggle
     vim.cmd(m .. i)
   end
+end
+
+local invert = function()
+  local w = vim.fn.expand('<cword>')
+  local i = Inverse.list[w]
+  return w, i
 end
 
 Inverse.toggle = function()
@@ -36,15 +57,18 @@ Inverse.toggle = function()
   end
   -- get word under cursor
   Keys.load()
-  local i = Inverse.list[vim.fn.expand('<cword>')]
+  local log = {}
+  local w, i = invert()
+  log['first-try'] = i or 'nil'
   if not i then
     Keys.reset()
-    i = Inverse.list[vim.fn.expand('<cword>')]
-    toggle(m, i)
+    w, i = invert()
+    toggle(m, w, i, ch)
   else
-    toggle(m, i)
+    toggle(m, w, i, ch)
     Keys.reset()
   end
+  print(vim.inspect(log))
 end
 
 return Inverse
