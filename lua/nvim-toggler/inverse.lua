@@ -14,6 +14,7 @@ local c = {
 }
 
 Inverse.toggle = function()
+  print("GOT HERE")
   -- check character under cursor
   local x = vim.fn.col('.')
   local ch = vim.fn.getline('.'):sub(x, x)

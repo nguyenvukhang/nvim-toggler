@@ -1,0 +1,111 @@
+#!/usr/bin/env sh
+# vim:ft=bash
+
+nvim=('nvim' '-u' './init.lua')
+cleanup() {
+  rm config.lua
+  rm -rf tmp
+}
+trap cleanup EXIT
+rm -rf tmp
+mkdir -p tmp
+
+norm() {
+  local t=tmp/$RANDOM.txt
+  for i in "$@"; do
+    nvim+=("-c" "\"norm! $i\"")
+  done
+  nvim+=('--' "$t")
+  eval ${cmd[@]}
+  local out=$(cat $t >/dev/null) # get file contents
+  echo $out
+}
+
+SETUP=""
+let PASSES=0
+let TOTAL=0
+
+# set lua config by $SETUP variable
+setup() {
+  echo 'require("nvim-toggler").setup({' >config.lua
+  echo $SETUP >>config.lua
+  echo '})' >>config.lua
+}
+
+# $1 is commands in normal mode
+# $2 is starting file contents
+# $3 is expected end file contents
+run_test() {
+  setup
+  local R=tmp/$RANDOM
+  echo "$2" >$R.actual          # set file contents
+  echo "$3" >$R.expect          # set expected output
+  echo "norm $1" >>$R.vim       # set commands
+  echo ":wq $R.actual" >>$R.vim # save file and quit
+
+  # run the test silently
+  nvim --headless -u ./init.lua -c "source $R.vim" -- $R.actual 2>/dev/null
+
+  # check output against expected
+  local diff=$(diff $R.actual $R.expect)
+
+  # gather stats and report
+  if [[ $diff == '' ]]; then
+    let PASSES++
+  else
+    echo "<: received, >: expected"
+    echo "${diff}"
+  fi
+  let TOTAL++
+}
+
+summary() {
+  if [ $PASSES -eq $TOTAL ]; then
+    echo "All tests passed."
+  else
+    echo "Tests passed: $PASSES/$TOTAL"
+  fi
+}
+
+# Default Inverses: (for reference)
+#   ['true'] = 'false',
+#   ['yes'] = 'no',
+#   ['on'] = 'off',
+#   ['left'] = 'right',
+#   ['up'] = 'down',
+#   ['!='] = '==',
+
+# simple test 1
+SETUP="inverses = {
+['true'] = 'false',
+},
+remove_default_inverses = true"
+run_test "^ft i" "( true )" "( false )"
+
+# simple test 2
+SETUP="inverses = {
+['vertical'] = 'horizontal',
+},
+remove_default_inverses = true"
+run_test "^fh i" "( horizontal )" "( vertical )"
+
+# conflicting config
+# up <> middle conflicts with default up <> down
+SETUP="inverses = {
+['up'] = 'middle',
+}"
+run_test "^fu i" "( up )" "( middle )"
+
+# reversed conflicting config
+# middle <> up conflicts with default up <> down
+SETUP="inverses = {
+['middle'] = 'up',
+}"
+run_test "^fu i" "( up )" "( middle )"
+
+# don't pollute user clipboard
+SETUP=""
+run_test "^yiwft ip" "yanked true" "yanked falseyanked"
+
+# end of tests
+summary

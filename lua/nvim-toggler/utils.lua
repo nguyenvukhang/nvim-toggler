@@ -37,9 +37,15 @@ end
 
 -- remove duplicates
 local sanitize_tbl = function(base, tbl)
+  -- load hash from base
+  local hash = {}
+  for k, v in pairs(base) do
+    hash[k] = true
+    hash[v] = true
+  end
+
   local result = base or {} -- fallback to blank table
   tbl = validate_tbl(tbl) -- validate incoming tbl
-  local hash = {}
 
   for k, v in pairs(tbl) do
     if not hash[k] and not hash[v] then
