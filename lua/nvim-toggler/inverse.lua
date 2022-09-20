@@ -13,6 +13,15 @@ local c = {
   ['v'] = 'norm! "_c',
 }
 
+-- m - mode
+-- i - inverse
+local toggle = function(m, i)
+  if u.assert(i, u.err.UNSUPPORTED_VALUE) then
+    -- execute the toggle
+    vim.cmd(m .. i)
+  end
+end
+
 Inverse.toggle = function()
   -- check character under cursor
   local x = vim.fn.col('.')
@@ -28,10 +37,14 @@ Inverse.toggle = function()
   -- get word under cursor
   Keys.load()
   local i = Inverse.list[vim.fn.expand('<cword>')]
-  if u.assert(i, u.err.UNSUPPORTED_VALUE) then
-    vim.cmd(m .. i)
+  if not i then
+    Keys.reset()
+    i = Inverse.list[vim.fn.expand('<cword>')]
+    toggle(m, i)
+  else
+    toggle(m, i)
+    Keys.reset()
   end
-  Keys.reset()
 end
 
 return Inverse
