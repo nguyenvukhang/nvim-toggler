@@ -10,17 +10,6 @@ trap cleanup EXIT
 rm -rf tmp
 mkdir -p tmp
 
-norm() {
-  local t=tmp/$RANDOM.txt
-  for i in "$@"; do
-    nvim+=("-c" "\"norm! $i\"")
-  done
-  nvim+=('--' "$t")
-  eval ${cmd[@]}
-  local out=$(cat $t >/dev/null) # get file contents
-  echo $out
-}
-
 SETUP=""
 let PASSES=0
 let TOTAL=0
