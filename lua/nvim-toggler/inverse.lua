@@ -55,11 +55,9 @@ Inverse.toggle = function()
   if not u.assert(m, u.err.UNSUPPORTED_MODE) then
     return
   end
-  -- get word under cursor
+  -- attempt two toggles, with and without keys loaded
   Keys.load()
-  local log = {}
   local w, i = invert()
-  log['first-try'] = i or 'nil'
   if not i then
     Keys.reset()
     w, i = invert()
@@ -68,7 +66,6 @@ Inverse.toggle = function()
     toggle(m, w, i, ch)
     Keys.reset()
   end
-  print(vim.inspect(log))
 end
 
 return Inverse
