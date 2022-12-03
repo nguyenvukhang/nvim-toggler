@@ -88,7 +88,6 @@ function app:toggle()
   local results = {}
   for word, inverse in pairs(self.inv_tbl.data) do
     if word:contains_byte(byte) then
-      -- print(word, vim.fn.nr2char(byte), cursor - #word + 1)
       local lo, hi = line:surround(word, cursor)
       if lo and lo <= cursor and cursor <= hi then
         table.insert(
