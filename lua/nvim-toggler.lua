@@ -1,38 +1,7 @@
 local log = {}
 local banner = function(msg) return '[nvim-toggler] ' .. msg end
-log.warn = function(msg) vim.notify(banner(msg), vim.log.levels.WARN) end
-log.once =
-  function(msg) vim.api.nvim_echo({ { banner(msg), 'None' } }, false, {}) end
-log.text = {
-  NO_OP = 'nothing happened.',
-  UNSUPPORTED_VALUE = 'unsupported value.',
-  DUPLICATE_INVERSE = 'conflicts found in inverse config.',
-  BAD_CONFIG_TYPE = 'incorrect type found in config.',
-}
-
--- looks for char in string
-string.contains = function(self, char)
-  local byte, len = char:byte(1), self:len()
-  for i = 1, len do
-    if self:byte(i) == byte then return true end
-  end
-  return false
-end
-
--- looks for character sequence in string
-string.find_byte_sequence = function(self, char_seq, after_idx)
-  local c_ptr, s_ptr = 0, after_idx - 1
-  local cs_len, str_len = char_seq:len(), self:len()
-  while c_ptr < cs_len and s_ptr < str_len do
-    if char_seq:byte(c_ptr + 1) == self:byte(s_ptr + 1) then
-      s_ptr, c_ptr = s_ptr + 1, c_ptr + 1
-    else
-      s_ptr = s_ptr + 1
-      c_ptr = 0
-    end
-  end
-  if c_ptr == cs_len then return s_ptr - c_ptr + 1, s_ptr end
-end
+function log.warn(msg) vim.notify_once(banner(msg), vim.log.levels.WARN) end
+function log.once(msg) vim.api.nvim_echo({ { banner(msg), 'None' } }, false, {}) end
 
 local defaults = {
   inverses = {
@@ -49,9 +18,26 @@ local defaults = {
   },
 }
 
+function string:contains_byte(byte)
+  for i = 1, self:len() do
+    if self:byte(i) == byte then return true end
+  end
+  return false
+end
+
+function string:surround(query, cursor)
+  local len_b, len_s = query:len(), math.min(cursor + #query, self:len())
+  local b, s = 0, math.max(cursor - #query, 0)
+  while b < len_b and s < len_s do
+    b = query:byte(b + 1) == self:byte(s + 1) and b + 1 or 0
+    s = s + 1
+  end
+  if b == len_b then return s - b + 1, s end
+end
+
 local inv_tbl = { data = {}, hash = {} }
 
-inv_tbl.reset = function(self)
+function inv_tbl:reset()
   self.hash, self.data = {}, {}
 end
 
@@ -59,47 +45,31 @@ end
 --
 -- If either the `key` or the `value` is found to be already in
 -- `inv_tbl`, then the `key`-`value` pair will not be added.
-inv_tbl.add = function(self, tbl)
+function inv_tbl:add(tbl)
   for k, v in pairs(tbl or {}) do
     if not self.hash[k] and not self.hash[v] then
       self.data[k], self.data[v], self.hash[k], self.hash[v] = v, k, true, true
     else
-      log.warn(log.text.DUPLICATE_INVERSE)
+      log.warn('conflicts found in inverse config.')
     end
   end
 end
 
 local app = { inv_tbl = inv_tbl, opts = {} }
 
-app._reset = function(self)
-  self.inv_tbl:reset()
-  self.opts = {}
-end
-app.reset = function() app:_reset() end
-
-app.load_opts = function(self, opts)
+function app:load_opts(opts)
   opts = opts or {}
   for k in pairs(defaults.opts) do
     if type(opts[k]) == type(defaults.opts[k]) then
       self.opts[k] = opts[k]
     elseif opts[k] ~= nil then
-      log.warn(log.text.BAD_CONFIG_TYPE)
+      log.warn('incorrect type found in config.')
     end
   end
 end
 
----@class Packet
----index of the left-bound of the word found in line (inclusive)
----@field public lo number
----index of the right-bound of the word found in line (inclusive)
----@field public hi number
----@field public inverse string
----@field public word string
-
--- Executes the swap in-buffer
----@param packet Packet
-app.sub = function(line, packet)
-  local lo, hi, inverse = packet.lo, packet.hi, packet.inverse
+function app.sub(line, result)
+  local lo, hi, inverse = result.lo, result.hi, result.inverse
   line = table.concat({ line:sub(1, lo - 1), inverse, line:sub(hi + 1) }, '')
   return vim.api.nvim_set_current_line(line)
 end
@@ -111,48 +81,42 @@ end
 --   1. `word` contains the character under the cursor.
 --   2. current line contains `word`.
 --   3. cursor is on that `word` in the current line.
-app._toggle = function(self)
+function app:toggle()
   local line, cursor = vim.fn.getline('.'), vim.fn.col('.')
-  local char = vim.fn.nr2char(line:byte(cursor))
-  local packets = {}
+  local byte = line:byte(cursor)
+  local results = {}
   for word, inverse in pairs(self.inv_tbl.data) do
-    if word:contains(char) then
-      local lo, hi =
-        line:find_byte_sequence(word, math.max(cursor - #word + 1, 1))
-      if lo and hi and lo <= cursor and cursor <= hi then
+    if word:contains_byte(byte) then
+      -- print(word, vim.fn.nr2char(byte), cursor - #word + 1)
+      local lo, hi = line:surround(word, cursor)
+      if lo and lo <= cursor and cursor <= hi then
         table.insert(
-          packets,
+          results,
           { lo = lo, hi = hi, inverse = inverse, word = word }
         )
       end
     end
   end
-  if #packets == 0 then return log.warn(log.text.UNSUPPORTED_VALUE) end
-  if #packets == 1 then return app.sub(line, packets[1]) end
-  return app.multi(line, packets)
-end
-app.toggle = function() app:_toggle() end
-
----@param line string
----@param packets table<Packet>
-app.multi = function(line, packets)
-  table.sort(packets, function(a, b) return a.word < b.word end)
-  local prompt, format = {}, '[%d] %s -> %s'
-  for i, packet in ipairs(packets) do
-    table.insert(prompt, format:format(i, packet.word, packet.inverse))
+  if #results == 0 then return log.warn('unsupported value.') end
+  if #results == 1 then return self.sub(line, results[1]) end
+  -- handle multiple results
+  table.sort(results, function(a, b) return a.word < b.word end)
+  local prompt, fmt = {}, '[%d] %s -> %s'
+  for i, result in ipairs(results) do
+    table.insert(prompt, fmt:format(i, result.word, result.inverse))
   end
   table.insert(prompt, '[?] > ')
-  local packet = packets[vim.fn.input(table.concat(prompt, '\n')):byte(1) - 48]
+  local result = results[vim.fn.input(table.concat(prompt, '\n')):byte(1) - 48]
   vim.cmd('redraw!')
-  if packet then
-    app.sub(line, packet)
-    log.once(('%s -> %s'):format(packet.word, packet.inverse))
+  if result then
+    app.sub(line, result)
+    log.once(('%s -> %s'):format(result.word, result.inverse))
   else
-    log.once(log.text.NO_OP)
+    log.once('nothing happened.')
   end
 end
 
-app._setup = function(self, opts)
+function app:setup(opts)
   self:load_opts(defaults.opts)
   self:load_opts(opts)
   self.inv_tbl:add((opts or {}).inverses)
@@ -160,9 +124,15 @@ app._setup = function(self, opts)
     self.inv_tbl:add(defaults.inverses)
   end
   if not self.opts.remove_default_keybinds then
-    vim.keymap.set({ 'n', 'v' }, '<leader>i', app.toggle, { silent = true })
+    vim.keymap.set({ 'n', 'v' }, '<leader>i', self.toggle, { silent = true })
   end
 end
-app.setup = function(opts) app:_setup(opts) end
 
-return { setup = app.setup, toggle = app.toggle, reset = app.reset }
+return {
+  setup = function(opts) app:setup(opts) end,
+  toggle = function() app:toggle() end,
+  reset = function()
+    app.inv_tbl:reset()
+    app.opts = {}
+  end,
+}

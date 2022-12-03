@@ -128,19 +128,10 @@ local function stable()
   test:assert('true!=false', 'true==false', 6)
   test:assert('true!=false', 'true!=true', 7)
 
-  test('Clustered inverses with symbols')
-  test:inverses({ ['!='] = '==', ['true'] = 'false' })
-  test:assert('true!=false', 'false!=false', 4)
-  test:assert('true!=false', 'true==false', 5)
-  test:assert('true!=false', 'true==false', 6)
-  test:assert('true!=false', 'true!=true', 7)
-
   test('Inverses with spaces')
   test:inverses({ ['check yes'] = 'juliet are' })
   test:assert('check yes you', 'juliet are you', 4)
-end
 
-local function experimental()
   test('Toggle checkboxes')
   test:inverses({ ['- [ ]'] = '- [x]' })
   test:assert('- [ ] Buy milk', '- [x] Buy milk', 1)
@@ -149,12 +140,14 @@ local function experimental()
   test:assert('- [ ] Buy milk', '- [x] Buy milk', 4)
   test:assert('- [ ] Buy milk', '- [x] Buy milk', 5)
   test:assert('- [ ] Buy milk', '- [ ] Buy milk', 6)
-
-  -- check with manual testing
-  -- test('Multiple matches')
-  -- test:inverses({ ['true'] = 'false', ['ru'] = 'falslyfalse' })
-  -- test:assert('foo true bar', 'foo true bar', 6)
 end
+
+local function experimental() end
+
+-- check with manual testing
+-- test('Multiple matches')
+-- test:inverses({ ['true'] = 'false', ['ru'] = 'falslyfalse' })
+-- test:assert('foo true bar', 'foo true bar', 6)
 
 stable()
 experimental()
