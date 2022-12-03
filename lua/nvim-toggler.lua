@@ -46,11 +46,11 @@ end
 --
 -- If either the `key` or the `value` is found to be already in
 -- `inv_tbl`, then the `key`-`value` pair will not be added.
-function inv_tbl:add(tbl)
+function inv_tbl:add(tbl, verbose)
   for k, v in pairs(tbl or {}) do
     if not self.hash[k] and not self.hash[v] then
       self.data[k], self.data[v], self.hash[k], self.hash[v] = v, k, true, true
-    else
+    elseif verbose then
       log.once('conflicts found in inverse config.')
     end
   end
@@ -120,7 +120,7 @@ end
 function app:setup(opts)
   self:load_opts(defaults.opts)
   self:load_opts(opts)
-  self.inv_tbl:add((opts or {}).inverses)
+  self.inv_tbl:add((opts or {}).inverses, true)
   if not self.opts.remove_default_inverses then
     self.inv_tbl:add(defaults.inverses)
   end
