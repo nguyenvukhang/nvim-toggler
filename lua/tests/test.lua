@@ -12,7 +12,7 @@ local clear_package = function()
   end, related_packages)
 end
 clear_package()
-require('nvim-toggler.init').setup({
+require('nvim-toggler').setup({
   inverses = {
     ['true'] = 'false',
     ['ru'] = 'fase',
@@ -62,7 +62,7 @@ test.setup = function(self, config) self._config = config end
 test.run = function(self, start_state, cursor_pos)
   vim.api.nvim_set_current_line(start_state or '')
   vim.cmd('norm! ' .. cursor_pos .. '|')
-  local nt = require('nvim-toggler.init')
+  local nt = require('nvim-toggler')
   nt.reset()
   nt.setup(self._config)
   nt.toggle()

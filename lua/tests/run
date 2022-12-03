@@ -6,9 +6,9 @@ if [[ $1 == '-i' ]]; then
   }
   trap c EXIT
   nvim --clean \
-    -c "lua package.path = package.path .. ';./?.lua;../../?.lua'" \
+    -c "lua package.path = package.path .. ';./?.lua;../?.lua'" \
     -c 'lua require("test")' -- tmp.txt
 fi
 nvim --headless --clean \
-  -c "lua package.path = package.path .. ';./?.lua;../../?.lua'" \
+  -c "lua package.path = package.path .. ';./?.lua;../?.lua'" \
   -c 'lua require("test")' -c "q!"

@@ -12,8 +12,8 @@ log.text = {
 
 -- looks for char in string
 string.contains = function(self, char)
-  local byte = char:byte(1)
-  for i = 1, self:len() do
+  local byte, len = char:byte(1), self:len()
+  for i = 1, len do
     if self:byte(i) == byte then return true end
   end
   return false
@@ -136,7 +136,7 @@ app.toggle = function() app:_toggle() end
 ---@param line string
 ---@param packets table<Packet>
 app.multi = function(line, packets)
-  table.sort(packets, function(a, b) return a.word > b.word end)
+  table.sort(packets, function(a, b) return a.word < b.word end)
   local prompt, format = {}, '[%d] %s -> %s'
   for i, packet in ipairs(packets) do
     table.insert(prompt, format:format(i, packet.word, packet.inverse))
