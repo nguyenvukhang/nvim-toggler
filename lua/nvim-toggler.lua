@@ -1,7 +1,8 @@
 local log = {}
 local banner = function(msg) return '[nvim-toggler] ' .. msg end
-function log.warn(msg) vim.notify_once(banner(msg), vim.log.levels.WARN) end
-function log.once(msg) vim.api.nvim_echo({ { banner(msg), 'None' } }, false, {}) end
+function log.warn(msg) vim.notify(banner(msg), vim.log.levels.WARN) end
+function log.once(msg) vim.notify_once(banner(msg), vim.log.levels.WARN) end
+function log.echo(msg) vim.api.nvim_echo({ { banner(msg), 'None' } }, false, {}) end
 
 local defaults = {
   inverses = {
@@ -50,7 +51,7 @@ function inv_tbl:add(tbl)
     if not self.hash[k] and not self.hash[v] then
       self.data[k], self.data[v], self.hash[k], self.hash[v] = v, k, true, true
     else
-      log.warn('conflicts found in inverse config.')
+      log.once('conflicts found in inverse config.')
     end
   end
 end
@@ -63,7 +64,7 @@ function app:load_opts(opts)
     if type(opts[k]) == type(defaults.opts[k]) then
       self.opts[k] = opts[k]
     elseif opts[k] ~= nil then
-      log.warn('incorrect type found in config.')
+      log.once('incorrect type found in config.')
     end
   end
 end
@@ -110,9 +111,9 @@ function app:toggle()
   vim.cmd('redraw!')
   if result then
     app.sub(line, result)
-    log.once(('%s -> %s'):format(result.word, result.inverse))
+    log.echo(('%s -> %s'):format(result.word, result.inverse))
   else
-    log.once('nothing happened.')
+    log.echo('nothing happened.')
   end
 end
 
