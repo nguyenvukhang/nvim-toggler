@@ -119,12 +119,18 @@ end
 function app:setup(opts)
   self:load_opts(defaults.opts)
   self:load_opts(opts)
+  self.inv_tbl:reset()
   self.inv_tbl:add((opts or {}).inverses, true)
   if not self.opts.remove_default_inverses then
     self.inv_tbl:add(defaults.inverses)
   end
   if not self.opts.remove_default_keybinds then
-    vim.keymap.set({ 'n', 'v' }, '<leader>i', self.toggle, { silent = true })
+    vim.keymap.set(
+      { 'n', 'v' },
+      '<leader>i',
+      function() self:toggle() end,
+      { silent = true }
+    )
   end
 end
 
