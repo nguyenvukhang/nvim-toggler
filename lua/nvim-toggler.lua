@@ -19,21 +19,27 @@ local defaults = {
   },
 }
 
-function string:contains_byte(byte)
-  for i = 1, self:len() do
-    if self:byte(i) == byte then return true end
+---@param str string
+---@param byte integer
+---@return boolean
+local function contains_byte(str, byte)
+  for i = 1, #str do
+    if str:byte(i) == byte then return true end
   end
   return false
 end
 
-function string:surround(query, cursor)
-  local len_b, len_s = query:len(), math.min(cursor + #query, self:len())
-  local b, s = 0, math.max(cursor - #query, 0)
-  while b < len_b and s < len_s do
-    b = query:byte(b + 1) == self:byte(s + 1) and b + 1 or 0
-    s = s + 1
+---@param line string
+---@param word string
+---@param c_pos integer
+---@return integer|nil, integer|nil
+local function surround(line, word, c_pos)
+  local w, W = 0, #word
+  local l, L = math.max(c_pos - #word, 0), math.min(c_pos + #word, #line)
+  while w < W and l < L do
+    w, l = word:byte(w + 1) == line:byte(l + 1) and w + 1 or 0, l + 1
   end
-  if b == len_b then return s - b + 1, s end
+  if w == W then return l - w + 1, l end
 end
 
 local inv_tbl = { data = {}, hash = {} }
@@ -87,8 +93,8 @@ function app:toggle()
   local byte = line:byte(cursor)
   local results = {}
   for word, inverse in pairs(self.inv_tbl.data) do
-    if word:contains_byte(byte) then
-      local lo, hi = line:surround(word, cursor)
+    if contains_byte(word, byte) then
+      local lo, hi = surround(line, word, cursor)
       if lo and lo <= cursor and cursor <= hi then
         table.insert(
           results,
