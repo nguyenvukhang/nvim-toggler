@@ -7,10 +7,12 @@ function log.echo(msg) vim.api.nvim_echo({ { banner(msg), 'None' } }, false, {})
 local defaults = {
   inverses = {
     ['true'] = 'false',
+    ['True'] = 'False',
     ['yes'] = 'no',
     ['on'] = 'off',
     ['left'] = 'right',
     ['up'] = 'down',
+    ['enable'] = 'disable',
     ['!='] = '==',
   },
   opts = {
