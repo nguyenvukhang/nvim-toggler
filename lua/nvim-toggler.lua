@@ -39,7 +39,8 @@ local function surround(line, word, c_pos)
   local w, W = 0, #word
   local l, L = math.max(c_pos - #word, 0), math.min(c_pos + #word, #line)
   while w < W and l < L do
-    w, l = word:byte(w + 1) == line:byte(l + 1) and w + 1 or 0, l + 1
+    local _w, _l = word:byte(w + 1), line:byte(l + 1)
+    w, l = _w == _l and w + 1 or word:byte(1) == _l and 1 or 0, l + 1
   end
   if w == W then return l - w + 1, l end
 end

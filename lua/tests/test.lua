@@ -140,6 +140,13 @@ local function stable()
   test:assert('- [ ] Buy milk', '- [x] Buy milk', 4)
   test:assert('- [ ] Buy milk', '- [x] Buy milk', 5)
   test:assert('- [ ] Buy milk', '- [ ] Buy milk', 6)
+
+  test('LaTeX bug')
+  test:inverses({ ['true'] = 'false' })
+  test:assert('\\iffalse', '\\iftrue', 4)
+  test:assert('\\iftrue', '\\iffalse', 4)
+  test:assert('\\iftrue', '\\iffalse', 7)
+  test:assert('\\iffalse', '\\iftrue', 6)
 end
 
 local function experimental() end
