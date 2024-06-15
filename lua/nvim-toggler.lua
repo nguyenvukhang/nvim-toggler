@@ -115,8 +115,11 @@ function app:toggle()
     table.insert(prompt, fmt:format(i, result.word, result.inverse))
   end
   table.insert(prompt, '[?] > ')
-  local result = results[vim.fn.input(table.concat(prompt, '\n')):byte(1) - 48]
+  local input = vim.fn.input(table.concat(prompt, '\n'))
   vim.cmd('redraw!')
+  if input == nil then return log.echo('nothing happened.') end
+  byte = input:byte(1)
+  local result = results[byte == nil and 1 or byte - 48]
   if result then
     app.sub(line, result)
     log.echo(('%s -> %s'):format(result.word, result.inverse))
