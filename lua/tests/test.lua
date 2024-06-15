@@ -147,6 +147,15 @@ local function stable()
   test:assert('\\iftrue', '\\iffalse', 4)
   test:assert('\\iftrue', '\\iffalse', 7)
   test:assert('\\iffalse', '\\iftrue', 6)
+
+  test('Substring of inverse')
+  test:inverses({ ['shift'] = 'unshift' })
+  test:assert('\\shift', '\\unshift', 4)
+  test:assert('\\unshift', '\\shift', 2)
+  test:assert('\\unshift', '\\shift', 3)
+
+  -- FAILING: this triggers a user interaction due to the ambiguity.
+  -- test:assert('\\unshift', '\\shift', 4)
 end
 
 local function experimental() end
