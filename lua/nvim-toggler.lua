@@ -18,6 +18,7 @@ local defaults = {
   opts = {
     remove_default_keybinds = false,
     remove_default_inverses = false,
+    autoselect_longest_match = false,
   },
 }
 
@@ -108,8 +109,13 @@ function app:toggle()
   end
   if #results == 0 then return log.warn('unsupported value.') end
   if #results == 1 then return self.sub(line, results[1]) end
-  -- handle multiple results
-  table.sort(results, function(a, b) return a.word < b.word end)
+  -- handle multiple results (`results` is guaranteed >= 2 entries from here)
+  table.sort(results, function(a, b) return #a.word > #b.word end)
+  if
+    #results[1].word > #results[2].word and app.opts.autoselect_longest_match
+  then
+    return app.sub(line, results[1])
+  end
   local prompt, fmt = {}, '[%d] %s -> %s'
   for i, result in ipairs(results) do
     table.insert(prompt, fmt:format(i, result.word, result.inverse))
