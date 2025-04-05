@@ -7,7 +7,6 @@ function log.echo(msg) vim.api.nvim_echo({ { banner(msg), 'None' } }, false, {})
 local defaults = {
   inverses = {
     ['true'] = 'false',
-    ['True'] = 'False',
     ['yes'] = 'no',
     ['on'] = 'off',
     ['left'] = 'right',
@@ -19,6 +18,7 @@ local defaults = {
     remove_default_keybinds = false,
     remove_default_inverses = false,
     autoselect_longest_match = false,
+    smart_case_matching = true,
   },
 }
 
@@ -46,6 +46,64 @@ local function surround(line, word, c_pos)
   if w == W then return l - w + 1, l end
 end
 
+local case_type = {
+  lower = {},
+  upper = {},
+  sentence = {},
+  other = {},
+}
+
+---Returns the case_type enum
+---@param line string
+---@param lo integer
+---@param hi integer
+---@return table
+local function check_casing(line, lo, hi)
+  -- This will also be true for not letters
+  local first_char = line:sub(lo, lo)
+  local first_char_upper = first_char == first_char:upper()
+
+  -- Handle single letter match
+  if lo == hi then
+    if first_char_upper then
+      return case_type.upper
+    else
+      return case_type.lower
+    end
+  end
+
+  local second_char = line:sub(lo + 1, lo + 1)
+  local second_char_upper = second_char == second_char:upper()
+  local current_type
+
+  if first_char_upper then
+    if second_char_upper then
+      current_type = case_type.upper
+    else
+      current_type = case_type.sentence
+    end
+  elseif not second_char_upper then
+    current_type = case_type.lower
+  else
+    return case_type.other
+  end
+
+  -- 2 letter match
+  if hi - lo == 1 then return current_type end
+
+  for i = lo + 2, hi do
+    local char = line:sub(i, i)
+    local is_upper = char == char:upper()
+    if is_upper then
+      if current_type ~= case_type.upper then return case_type.other end
+    else
+      if current_type == case_type.upper then return case_type.other end
+    end
+  end
+
+  return current_type
+end
+
 local inv_tbl = { data = {}, hash = {} }
 
 function inv_tbl:reset()
@@ -66,7 +124,7 @@ function inv_tbl:add(tbl, verbose)
   end
 end
 
-local app = { inv_tbl = inv_tbl, opts = {} }
+local app = { inv_tbl = inv_tbl, inv_tbl_metadata = {}, opts = {} }
 
 function app:load_opts(opts)
   opts = opts or {}
@@ -97,13 +155,40 @@ function app:toggle()
   local byte = line:byte(cursor)
   local results = {}
   for word, inverse in pairs(self.inv_tbl.data) do
-    if contains_byte(word, byte) then
-      local lo, hi = surround(line, word, cursor)
-      if lo and lo <= cursor and cursor <= hi then
-        table.insert(
-          results,
-          { lo = lo, hi = hi, inverse = inverse, word = word }
-        )
+    if
+      app.opts.smart_case_matching
+      and self.inv_tbl_metadata[word].has_only_lower_case
+    then
+      local line_lower = line:lower()
+      -- Checks if the iterated word contains the character under cursor.
+      if contains_byte(word, line_lower:byte(cursor)) then
+        local lo, hi = surround(line_lower, word, cursor)
+        if lo and hi and lo <= cursor and cursor <= hi then
+          -- We have a match, so now check casing
+          local type = check_casing(line, lo, hi)
+          if type ~= case_type.other then
+            if type == case_type.upper then
+              inverse = inverse:upper()
+            elseif type == case_type.sentence then
+              inverse = inverse:sub(1, 1):upper() .. inverse:sub(2, -1)
+            end
+            table.insert(
+              results,
+              { lo = lo, hi = hi, inverse = inverse, word = word }
+            )
+          end
+        end
+      end
+    else
+      -- Checks if the iterated word contains the character under cursor.
+      if contains_byte(word, byte) then
+        local lo, hi = surround(line, word, cursor)
+        if lo and lo <= cursor and cursor <= hi then
+          table.insert(
+            results,
+            { lo = lo, hi = hi, inverse = inverse, word = word }
+          )
+        end
       end
     end
   end
@@ -140,6 +225,11 @@ function app:setup(opts)
   self.inv_tbl:add((opts or {}).inverses, true)
   if not self.opts.remove_default_inverses then
     self.inv_tbl:add(defaults.inverses)
+  end
+  for word, inverse in pairs(self.inv_tbl.data) do
+    self.inv_tbl_metadata[word] = {
+      has_only_lower_case = word == word:lower() and inverse == inverse:lower(),
+    }
   end
   if not self.opts.remove_default_keybinds then
     vim.keymap.set(

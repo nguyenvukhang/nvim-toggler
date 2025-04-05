@@ -59,7 +59,10 @@ require('nvim-toggler').setup({
   -- removes the default set of inverses
   remove_default_inverses = true,
   -- auto-selects the longest match when there are multiple matches
-  autoselect_longest_match = false
+  autoselect_longest_match = false,
+  -- applies the case of the match to the inversed word
+  -- works for all lower and all upper case words, and when the first letter is an uppercase
+  smart_case_matching = true
 })
 ```
 

@@ -156,6 +156,12 @@ local function stable()
 
   -- FAILING: this triggers a user interaction due to the ambiguity.
   -- test:assert('\\unshift', '\\shift', 4)
+
+  test('Smart case matching')
+  test:inverses({ ['true'] = 'false' })
+  test:assert('\\true', '\\false', 1)
+  test:assert('\\True', '\\False', 1)
+  test:assert('\\TRUE', '\\FALSE', 1)
 end
 
 local function experimental() end
