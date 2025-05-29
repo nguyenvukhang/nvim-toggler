@@ -1,6 +1,6 @@
 # nvim-toggler
 
-Invert text in vim, purely with lua.
+Toggle text in vim, purely with lua.
 
 ![demo](https://user-images.githubusercontent.com/10664455/185724246-f7165f38-6058-46f3-809b-d55cf09255e3.gif)
 
@@ -8,7 +8,7 @@ Invert text in vim, purely with lua.
 &nbsp;&middot;&nbsp;
 [Run](#run)
 &nbsp;&middot;&nbsp;
-[Custom inverses](#custom-inverses)
+[Configuration](#configuration)
 &nbsp;&middot;&nbsp;
 [Custom keymaps](#custom-keymaps)
 
@@ -40,27 +40,59 @@ require('nvim-toggler').setup()
 EOF
 ```
 
-Once that is set, the default binding is `<leader>i` to invert the
+Once that is set, the default binding is `<leader>i` to toggle the
 word under your cursor.
 
-## Custom inverses
+## Configuration
 
 You can configure `nvim-toggler` with the `setup()` function:
 
 ```lua
 -- init.lua
 require('nvim-toggler').setup({
-  -- your own inverses
-  inverses = {
-    ['vim'] = 'emacs'
+  -- Word cycles (new format)
+  word_cycles = {
+    {'up', 'down', 'left', 'right'},  -- Cycle through directions
+    {'true', 'false', 'maybe'},       -- Cycle through boolean states
   },
+  
+  -- Inverses (legacy format, still supported)
+  inverses = {
+    ['vim'] = 'emacs',
+    ['yes'] = 'no'
+  },
+  
   -- removes the default <leader>i keymap
   remove_default_keybinds = true,
-  -- removes the default set of inverses
+  
+  -- removes the default set of inverses and word cycles
   remove_default_inverses = true,
+  
   -- auto-selects the longest match when there are multiple matches
   autoselect_longest_match = false
 })
+```
+
+### Word Cycles
+
+The new `word_cycles` format allows you to define groups of related words that cycle through each other. For example:
+
+```lua
+word_cycles = {
+  {'up', 'down', 'left', 'right'},  -- When on 'up', toggles to 'down', then 'left', then 'right', then back to 'up'
+  {'true', 'false', 'maybe'},       -- Cycles through boolean states
+}
+```
+
+### Legacy Inverses
+
+The legacy `inverses` format is still supported for backward compatibility:
+
+```lua
+inverses = {
+  ['vim'] = 'emacs',  -- Toggles between 'vim' and 'emacs'
+  ['yes'] = 'no'      -- Toggles between 'yes' and 'no'
+}
 ```
 
 ## Custom keymaps
