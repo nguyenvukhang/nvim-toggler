@@ -5,13 +5,14 @@ function log.once(msg) vim.notify_once(banner(msg), vim.log.levels.WARN) end
 function log.echo(msg) vim.api.nvim_echo({ { banner(msg), 'None' } }, false, {}) end
 
 local defaults = {
+  word_cycles = {
+    {'up', 'down', 'left', 'right'},
+  },
   inverses = {
     ['true'] = 'false',
     ['True'] = 'False',
     ['yes'] = 'no',
     ['on'] = 'off',
-    ['left'] = 'right',
-    ['up'] = 'down',
     ['enable'] = 'disable',
     ['!='] = '==',
   },
@@ -46,22 +47,23 @@ local function surround(line, word, c_pos)
   if w == W then return l - w + 1, l end
 end
 
-local inv_tbl = { data = {}, hash = {} }
+local inv_tbl = { data = {} }
 
 function inv_tbl:reset()
-  self.hash, self.data = {}, {}
+  self.data = {}
 end
 
--- Adds unique key-value pairs to the inv_tbl.
---
--- If either the `key` or the `value` is found to be already in
--- `inv_tbl`, then the `key`-`value` pair will not be added.
+-- Adds word lists to the inv_tbl.
+-- Each word in the list will be mapped to its next word in the list.
 function inv_tbl:add(tbl, verbose)
-  for k, v in pairs(tbl or {}) do
-    if not self.hash[k] and not self.hash[v] then
-      self.data[k], self.data[v], self.hash[k], self.hash[v] = v, k, true, true
-    elseif verbose then
-      log.once('conflicts found in inverse config.')
+  for _, word_list in ipairs(tbl or {}) do
+    for i, word in ipairs(word_list) do
+      local next_word = word_list[i % #word_list + 1]
+      if not self.data[word] then
+        self.data[word] = next_word
+      elseif verbose then
+        log.once('conflicts found in inverse config.')
+      end
     end
   end
 end
@@ -137,10 +139,33 @@ function app:setup(opts)
   self:load_opts(defaults.opts)
   self:load_opts(opts)
   self.inv_tbl:reset()
-  self.inv_tbl:add((opts or {}).inverses, true)
-  if not self.opts.remove_default_inverses then
-    self.inv_tbl:add(defaults.inverses)
+  
+  -- First add inverses (legacy format)
+  if opts and opts.inverses then
+    local cycles = {}
+    for k, v in pairs(opts.inverses) do
+      table.insert(cycles, {k, v})
+    end
+    self.inv_tbl:add(cycles, true)
   end
+  
+  -- Then add word_cycles, which will overwrite any conflicts
+  if opts and opts.word_cycles then
+    self.inv_tbl:add(opts.word_cycles, true)
+  end
+  
+  if not self.opts.remove_default_inverses then
+    -- Add default inverses first
+    local cycles = {}
+    for k, v in pairs(defaults.inverses) do
+      table.insert(cycles, {k, v})
+    end
+    self.inv_tbl:add(cycles)
+    
+    -- Then add default word_cycles, which will overwrite any conflicts
+    self.inv_tbl:add(defaults.word_cycles)
+  end
+  
   if not self.opts.remove_default_keybinds then
     vim.keymap.set(
       { 'n', 'v' },
