@@ -156,6 +156,14 @@ local function stable()
 
   -- FAILING: this triggers a user interaction due to the ambiguity.
   -- test:assert('\\unshift', '\\shift', 4)
+
+  test('Inverses with emojis')
+  test:inverses({ ['🌎earth'] = '☀️sun' })
+  test:assert("we're on the 🌎earth", "we're on the 🌎earth", 13)
+  test:assert("we're on the 🌎earth", "we're on the ☀️sun", 14)
+  test:assert("we're on the 🌎earth", "we're on the ☀️sun", 15)
+  test:assert("we're on the 🌎earth", "we're on the ☀️sun", 16)
+  test:assert("we're on the 🌎earth", "we're on the ☀️sun", 17)
 end
 
 local function experimental() end
