@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 
-if [[ $1 == '-i' ]]; then
+if [ "$1" = "-i" ]; then
   c() {
     rm -f tmp.txt
   }
